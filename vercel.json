@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/api/events/purim", "dest": "/api/events/purim.js" }
+  ]
+}
