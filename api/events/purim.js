@@ -1,47 +1,36 @@
-export const runtime = "nodejs";
+export const config = { runtime: "nodejs" };
 
-export async function GET() {
+export default async function handler(req, res) {
   try {
     const calendarId = process.env.GCAL_ID;
     const apiKey = process.env.GOOGLE_API_KEY;
 
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
     if (!calendarId || !apiKey) {
-      return new Response(
-        JSON.stringify({ error: "Missing environment variables" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      return res.status(500).json({
+        error: "Missing environment variables",
+      });
     }
 
     const timeMin = new Date().toISOString();
 
     const url =
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}` +
-      `/events?singleEvents=true&orderBy=startTime&timeMin=${encodeURIComponent(timeMin)}` +
-      `&maxResults=250&key=${encodeURIComponent(apiKey)}`;
+      `/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=${encodeURIComponent(timeMin)}` +
+      `&key=${encodeURIComponent(apiKey)}`;
 
-    const response = await fetch(url);
+    const r = await fetch(url);
+    const data = await r.json();
 
-    if (!response.ok) {
-      const text = await response.text();
-      return new Response(
-        JSON.stringify({ error: "Google API error", details: text }),
-        { status: response.status, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const data = await response.json();
-
-    return new Response(
-      JSON.stringify({
-        count: data.items?.length || 0,
-        items: data.items || [],
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return res.status(200).json({
+      count: data.items?.length || 0,
+      items: data.items || [],
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Server error", message: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return res.status(500).json({
+      error: "Server error",
+      message: String(err),
+    });
   }
 }
